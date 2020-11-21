@@ -1,0 +1,106 @@
+---
+title: "Chromosome Plots"
+author: "Jacquelyn Giang"
+date: "11/20/2020"
+output: html_document
+---
+
+#This is all thanks to Laurel Geraci's original code on plotting dot and density plots. I altered the codes so that they act as a function where you change the parameters in a single line. 
+
+###(Recommended) Nonalphabetized Analysis: Run this Function as is. Do not change this function. You can click the small play button at the top right.
+
+```{r, echo=TRUE}
+NonAlphabetAnalysis = function(filelocation = "C:/Users/User/Desktop/UCD/Burgess/MCB 199/GFF3 Files/Excel/11.xlsx",startRow_of_File=3, grepinput="^gene", main="Total Genes", xlab="# of Genes", FirstZoomed="Gene Section", Lower=0, Upper=1000000, LowerLast=1000000, LastZoomed="Last MB Gene Selection"){
+
+  library(openxlsx)
+  chrom <- read.xlsx(filelocation, startRow = startRow_of_File)
+  
+  names(chrom)[1] <- "CHR"
+  names(chrom)[2] <- "ANNO"
+  names(chrom)[3] <- "REGION"
+  names(chrom)[4] <- "START"
+  names(chrom)[5] <- "END"
+  names(chrom)[6] <- "DOT"
+  names(chrom)[7] <- "SIGN"
+  names(chrom)[8] <- "ONE"
+  names(chrom)[9] <- "ID"
+
+  gak <- with(chrom,  chrom[order(chrom$REGION) , ])
+  g <- grep (grepinput, gak$REGION)
+  y <- gak[min(g):max(g), 4]
+  x <- (1:length(g))
+  x <- as.numeric(x)
+  regionxbp <- data.frame(x, y)
+  names(regionxbp)[1] <- "X"
+  names(regionxbp)[2] <- "Y"
+  y
+
+  plot = plot(regionxbp, main=main, xlab=xlab, ylab="Start bp")
+  fit <- lm(y ~ x)
+  abline(fit)
+  r_squared = summary(fit)$r.squared
+  
+  print("R^2 is")
+  
+  print(r_squared)
+  
+  slope = 1000000/(coef(fit))
+  
+  print("Number of Interested Regions per MB is")
+  
+  print(slope)
+  
+  plot(density(y),main="Density of Interested Region for Entire Chromosome")
+  
+  lower = Lower
+  upper = Upper
+  ind = which(y >=lower & y <=upper)
+  plot(x[ind], y[ind], main=FirstZoomed, xlab=xlab, ylab="Start bp")
+  goy <- lm(y[ind] ~ x[ind])
+  abline(goy)
+  print("Zoomed R^2 is")
+  print(summary(goy)$r.squared)
+  print("Number of Interested First Zoomed Regions per MB is")
+  print(1000000/(coef(goy)))
+  plot(density(y[ind]),main="Density of First Zoomed Region")
+  
+  lower_lastMB = (max(y)-LowerLast)
+  upper_lastMB = max(y)
+  ind = which(y >=lower_lastMB & y <=upper_lastMB)
+  plot(x[ind], y[ind], main=LastZoomed, xlab=xlab, ylab="Start bp")
+  goy <- lm(y[ind] ~ x[ind])
+  abline(goy)
+  print("R^2 is")
+  print(summary(goy)$r.squared)
+  print("Number of Interested Last Zoomed Regions per MB is")
+  print(1000000/(coef(goy)))
+  plot(density(y[ind]),main="Density of Last Zoomed Region")
+  
+}
+```
+
+### This is the actual follow-up code that will plot your data. Here, make sure you change the following parameters inside the lines after AlphabetAnalysis.
+
+File location = Add your file location of the alphabetized spreadsheet in the quotation marks.
+
+startRow_of_File = The row number inside your Excel where all the data starts at (not which row the genes/region starts at)
+
+grepinput = in the parantheses, change the word gene if the region is something other than genes you are interested in. It should match the word in the column that describes the region.
+
+main = title of dot plot
+
+xlab = label for x-axis of dotplot
+
+FirstZoomed= In quotations, name of first Zoomed in dot plot (First MB or something like that)
+
+Lower = Lower bound of base positions you want to consider for beginning region.
+
+Upper = Upper bound of base pair positions you want to consider for beginning region.
+
+LowerLast = Size of last lower region you want to zoom on (If 1 Mb, just type 1000000)
+
+LastZoomed = In quotations, name of last Zoomed in dot plot (Last MB or something like that)
+
+```{r}
+NonAlphabetAnalysis(filelocation = "C:/Users/User/Desktop/UCD/Burgess/MCB 199/GFF3 Files/Excel/11random.xlsx",startRow_of_File=10, grepinput="^gene", main="Total Genes", xlab= "# of Genes", FirstZoomed="First MB Gene Section", Lower=0, Upper=1000000, LowerLast=1000000, LastZoomed="Last MB Gene Selection")
+```
