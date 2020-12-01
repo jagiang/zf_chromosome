@@ -1,0 +1,115 @@
+---
+title: "chrom tools"
+author: "Tobias"
+date: "11/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Link to danio rerio chroms: ftp://ftp.ensembl.org/pub/release-101/gff3/danio_rerio/
+```{r}
+library(ape)
+# NOT RUN {
+## requires to be connected on Internet
+## d = assembly zebra fish chrom url, can be changed. f = specific chrom on assembly
+d <- "ftp://ftp.ensembl.org/pub/release-101/gff3/danio_rerio/"
+## Change the number after chromosome. for different chromosomes.
+f <-"Danio_rerio.GRCz11.101.chromosome.2.gff3.gz"
+download.file(paste0(d, f), "mt_gff3.gz")
+##  GFF3 = true states that it is a gff3 file. GFF3=False means its a gff file.  
+gff.mito <- read.gff("mt_gff3.gz",GFF3 = TRUE)
+
+table(gff.mito$type)
+```
+```{r}
+Lower=0
+Upper=1000000
+xlab="# of Genes"
+FirstZoomed="First MB Gene Section"
+LowerLast=1000000
+LastZoomed="Last MB Gene Section"
+c <- gff.mito$end[gff.mito$type == "gene"]
+x <- 1:length(c)
+y <- gff.mito$start[gff.mito$type =="gene"]
+
+plot(x,c,main="Whole Chromosome")
+fit <- lm(y~ x)
+abline(lm(y~ x))
+r_squared = summary(lm(y~ x))$r.squared
+print(r_squared)
+ slope = 1000000/(coef(fit))
+ print(slope)
+ lower = Lower
+  upper = Upper
+  ind = which(y >=lower & y <=upper)
+  
+  plot(x[ind], y[ind], main=FirstZoomed, xlab=xlab, ylab="Start bp")
+  goy <- lm(y[ind] ~ x[ind])
+  abline(goy)
+  print("Zoomed R^2 is")
+  print(summary(goy)$r.squared)
+  print("Number of Interested First Zoomed Regions per MB is")
+  print(1000000/(coef(goy)))
+  
+  plot(density(y[ind]),main="Density of First Zoomed Region")
+  lower_lastMB = (max(y)-LowerLast)
+  upper_lastMB = max(y)
+  ind = which(y >=lower_lastMB & y <=upper_lastMB)
+  
+  plot(x[ind], y[ind], main=LastZoomed, xlab=xlab, ylab="Start bp")
+  goy <- lm(y[ind] ~ x[ind])
+  abline(goy)
+  print("R^2 is")
+  print(summary(goy)$r.squared)
+  print("Number of Interested Last Zoomed Regions per MB is")
+  print(1000000/(coef(goy)))
+  plot(density(y[ind]),main="Density of Last Zoomed Region")
+  ## The barplot
+counter <- 1
+gene_count <- 0
+num_feats <- 0
+features <- list()
+for(start in y){
+    gene_count <- gene_count + 1
+    if(start > 1000000*counter){
+        features[counter] <- if(num_feats==0) 1 else num_feats
+        counter <- counter + 1
+        num_feats <- 0
+    }else{
+        num_feats <- num_feats + 1
+    }
+}
+length(features)
+barplot(as.numeric(features), ylab="# of genes", xlab="MBPs")
+}
+```
+
+Split genes into groups of MBPs
+```{r}
+counter <- 1
+gene_count <- 0
+num_feats <- 0
+features <- list()
+for(start in gff.mito$start[gff.mito$type == "gene"]){
+    gene_count <- gene_count + 1
+    if(start > 1000000*counter){
+        features[counter] <- if(num_feats==0) 1 else num_feats
+        counter <- counter + 1
+        num_feats <- 0
+    }else{
+        num_feats <- num_feats + 1
+    }
+}
+length(features)
+barplot(as.numeric(features), ylab="# of genes", xlab="MBPs")
+features
+
+```
+Gets Chromosome length
+```{r}
+gff.mito$end[gff.mito$type == "chromosome"]
+```
+
