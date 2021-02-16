@@ -9,13 +9,13 @@ output:
 *Packages to install before running this code:
 -install.packages("slider")
 -install.packages("ggplot2")
--install.packages("pander")
+-install.packages("knitr")
 -install.packages("ape")
 ```{r, echo=FALSE}
 library(slider)
 library(ggplot2)
 library(ape)
-library(pander)
+library(knitr)
 
 d <- "ftp://ftp.ensembl.org/pub/release-101/gff3/danio_rerio/"
 fileURL = "Danio_rerio.GRCz11.101.chromosome.15.gff3.gz"
