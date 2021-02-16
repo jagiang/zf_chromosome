@@ -55,9 +55,9 @@ begin = which(Start >=lower & Start <=upper)
 first <- qplot(x = Gene[begin], y = Start[begin], color = Direction[begin], xlab = "Gene", ylab = "Start", geom = "count", main = "Gene Direction for First Megabase")
 first + theme(legend.position = "right") + scale_color_continuous(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
 
-lowar = (max(Start)-1000000)
-uppar = max(Start)
-finish = which(Start >=lowar & Start <=uppar)
+lower = (max(Start)-1000000)
+upper = max(Start)
+finish = which(Start >=lower & Start <=upper)
 
 last <- qplot(x = Gene[finish], y = Start[finish], color = Direction[finish], xlab = "Gene", ylab = "Start", geom = "count", main = "Gene Direction for Last Megabase")
 last + theme(legend.position = "right") + scale_color_continuous(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
@@ -130,17 +130,17 @@ whole_dist + theme(legend.position = "right") + scale_color_viridis_c(name="Dire
 
 lower = 0
 upper = 1000000
-begen = which(Start >=lower & End <=upper)
+begin = which(Start >=lower & End <=upper)
 
-first_dist <- qplot(x = Intergenes[begen], y = Distance[begen], color = MDirection[begen], xlab = "Intergenes", ylab = "Distance", geom = "point", main = "Intergenic Lengths for First Megabase")
+first_dist <- qplot(x = Intergenes[begin], y = Distance[begin], color = MDirection[begin], xlab = "Intergenes", ylab = "Distance", geom = "point", main = "Intergenic Lengths for First Megabase")
 
 first_dist + theme(legend.position = "right") + scale_color_viridis_c(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
 
-lowor = (max(End)-1000000)
-uppor = max(End)
-finesh = which(Start >=lowor & End <=uppor)
+lower = (max(End)-1000000)
+upper = max(End)
+finish = which(Start >=lower & End <=upper)
 
-last_dist <- qplot(x = Intergenes[finesh], y = Distance[finesh], color = MDirection[finesh], xlab = "Intergenes", ylab = "Distance", geom = "point", main = "Intergenic Lengths for Last Megabase")
+last_dist <- qplot(x = Intergenes[finish], y = Distance[finish], color = MDirection[finish], xlab = "Intergenes", ylab = "Distance", geom = "point", main = "Intergenic Lengths for Last Megabase")
 
 last_dist + theme(legend.position = "right") + scale_color_viridis_c(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
 ```
@@ -167,6 +167,52 @@ pander(ATable,
        caption="Observed vs. Expected values for Intergenic Regions")
 print("P-value is equal to:")
   p_value
+  
+lower = 0
+upper = 1000000
+lemon1 = which(y1 >=lower & y1 <=upper)
+lower = 0
+upper = 1000000
+melon1 = which(y2 >=lower & y2 <=upper)
+lower = 0
+upper = 1000000
+honey1 = which(y3 >=lower & y3 <=upper)
+  
+Observed2 <- c(length(z1[lemon1]), length(z2[melon1]), length(z3[honey1]))
+Expected2 <- sum(Observed2)*NullProportion
+Discrepancy2 <- (Expected2-Observed2)^2/Expected2
+TestStat2 <- sum(Discrepancy2)
+p_value2 <- 1-pchisq(TestStat2,3-1)
+ATable2 <- rbind(NullProportion,Expected2,Observed2,Discrepancy2)
+pander(ATable2,
+       col.names=Category,
+       digits=3,
+       caption="Observed vs. Expected values for Intergenic Regions")
+print("P-value is equal to:")
+  p_value2
+  
+lower = (max(y1)-1000000)
+upper = max(y1)
+lemon2 = which(y1 >=lower & y1 <=upper)
+lower = (max(y2)-1000000)
+upper = max(y2)
+melon2 = which(y2 >=lower & y2 <=upper)
+lower = (max(y3)-1000000)
+upper = max(y3)
+honey2 = which(y3 >=lower & y3 <=upper)
+  
+Observed3 <- c(length(z1[lemon2]), length(z2[melon2]), length(z3[honey2]))
+Expected3 <- sum(Observed3)*NullProportion
+Discrepancy3 <- (Expected3-Observed3)^2/Expected3
+TestStat3 <- sum(Discrepancy3)
+p_value3 <- 1-pchisq(TestStat3,3-1)
+ATable3 <- rbind(NullProportion,Expected3,Observed3,Discrepancy3)
+pander(ATable3,
+       col.names=Category,
+       digits=3,
+       caption="Observed vs. Expected values for Intergenic Regions")
+print("P-value is equal to:")
+  p_value3
 ```
 
 Here, we propose the ratio of Convergent:Divergent:Tandem regions is 1:1:3, and get the resulting p-value from a $\chi2$ test.
