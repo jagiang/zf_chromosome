@@ -1,0 +1,179 @@
+---
+title: "Intergenic Regions"
+author: "Laurel Geraci"
+date: "1/29/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+*Packages to install before running this code:
+-install.packages("slider")
+-install.packages("ggplot2")
+-install.packages("pander")
+-install.packages("ape")
+```{r, echo=FALSE}
+library(slider)
+library(ggplot2)
+library(ape)
+library(pander)
+
+d <- "ftp://ftp.ensembl.org/pub/release-101/gff3/danio_rerio/"
+fileURL = "Danio_rerio.GRCz11.101.chromosome.15.gff3.gz"
+f <- fileURL
+download.file(paste0(d, f), "mt_gff3.gz")
+gff.mito <- read.gff("mt_gff3.gz",GFF3 = TRUE)
+table(gff.mito$type)
+  names(gff.mito)[1] <- "CHR"
+  names(gff.mito)[2] <- "ANNO"
+  names(gff.mito)[3] <- "REGION"
+  names(gff.mito)[4] <- "START"
+  names(gff.mito)[5] <- "END"
+  names(gff.mito)[6] <- "DOT"
+  names(gff.mito)[7] <- "SIGN"
+  names(gff.mito)[8] <- "ONE"
+  names(gff.mito)[9] <- "ID"
+gak <- with(gff.mito,  gff.mito[order(gff.mito$REGION) , ])
+g <- grep ("^gene", gak$REGION)
+i <- gak[min(g):max(g), 7]
+s <- slide(i, ~.x, .before = 1)
+n <- as.data.frame.list(s)
+
+condition <- ifelse (n[1,] == "-" & n[2,] == "+", "Divergent", ifelse (n[1,] == "+" & n[2,] == "-", "Convergent", ifelse (n[1,] == "+" & n[2,] == "+", "Tandem", ifelse (n[1,] == "-" & n[2,] == "-", "Tandem", "0"))))
+condition_new <- type.convert(condition)
+
+Gene <- 1:length(g)
+Start <- gak[min(g):max(g),4]
+Direction <- as.numeric(condition_new)
+
+whole <- qplot(x = Gene, y = Start, fill = Direction, geom = "col", main = "Gene Direction for Whole Chromosome")
+whole + theme(legend.position = "right") + scale_fill_continuous(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem"))
+
+lower = 0
+upper = 1000000
+begin = which(Start >=lower & Start <=upper)
+
+first <- qplot(x = Gene[begin], y = Start[begin], color = Direction[begin], xlab = "Gene", ylab = "Start", geom = "count", main = "Gene Direction for First Megabase")
+first + theme(legend.position = "right") + scale_color_continuous(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
+
+lowar = (max(Start)-1000000)
+uppar = max(Start)
+finish = which(Start >=lowar & Start <=uppar)
+
+last <- qplot(x = Gene[finish], y = Start[finish], color = Direction[finish], xlab = "Gene", ylab = "Start", geom = "count", main = "Gene Direction for Last Megabase")
+last + theme(legend.position = "right") + scale_color_continuous(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
+```
+
+Here, we can see the direction of every gene in the genome.
+
+```{r, echo=FALSE}
+zan <- data.frame("Gene" = Gene, "Start" = Start, "Direction" = Direction)
+zoo <- with(zan,  zan[order(zan$Direction) , ])
+
+z1 <- grep ("^1", zoo$Direction)
+y1 <- zoo[min(z1):max(z1), 2]
+x1 <- (1:length(z1))
+x1 <- as.numeric(x1)
+converg <- data.frame(x1, y1)
+names(converg)[1] <- "Gene #"
+names(converg)[2] <- "Start bp"
+plot(converg, main="Distribution of Convergent Regions", xlab="Gene #", ylab="Start bp", type = "h", col = "purple")
+fit1 <- lm(y1 ~ x1)
+abline(fit1)
+print("Convergent Regions/MB is:")
+1000000/(coef(fit1))
+print("Number of Convergent Genes Is:")
+length(z1)
+
+z2 <- grep("^2", zoo$Direction)
+y2 <- zoo[min(z2):max(z2), 2]
+x2 <- (1:length(z2))
+x2 <- as.numeric(x2)
+diverg <- data.frame(x2, y2)
+names(diverg)[1] <- "Gene #"
+names(diverg)[2] <- "Start bp"
+plot(diverg, main="Distribution of Divergent Regions", xlab="Gene #", ylab="Start bp", type = "h", col = "purple")
+fit2 <- lm(y2 ~ x2)
+abline(fit2)
+print("Divergent Regions/MB is:")
+1000000/(coef(fit2))
+print("Number of Divergent Genes Is:")
+length(z2)
+
+z3 <- grep("^3", zoo$Direction)
+y3 <- zoo[min(z3):max(z3), 2]
+x3 <- (1:length(z3))
+x3 <- as.numeric(x3)
+tandem <- data.frame(x3, y3)
+names(tandem)[1] <- "Gene #"
+names(tandem)[2] <- "Start bp"
+plot(tandem, main="Distribution of Tandem Regions", xlab="Gene #", ylab="Start bp", type = "h", col = "purple")
+fit3 <- lm(y3 ~ x3)
+abline(fit3)
+print("Tandem Regions/MB is:")
+1000000/(coef(fit3))
+print("Number of Tandem Genes Is:")
+length(z3)
+```
+
+Here, we can see how individual gene directions are distributed throughout the chromosome.
+
+```{r, echo=FALSE}
+End <- gak[min(g):max(g-1),5]
+Start_bp <- Start[2:length(Start)]
+Distance <- (Start_bp - End)
+Intergenes <- 1:(length(g)-1)
+MDirection <- Direction[1:length(Direction)-1]
+
+whole_dist <- qplot(x = Intergenes, y = Distance, color = MDirection, geom = "point", main = "Intergenic Lengths for Whole Chromosome")
+
+whole_dist + theme(legend.position = "right") + scale_color_viridis_c(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
+
+lower = 0
+upper = 1000000
+begen = which(Start >=lower & End <=upper)
+
+first_dist <- qplot(x = Intergenes[begen], y = Distance[begen], color = MDirection[begen], xlab = "Intergenes", ylab = "Distance", geom = "point", main = "Intergenic Lengths for First Megabase")
+
+first_dist + theme(legend.position = "right") + scale_color_viridis_c(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
+
+lowor = (max(End)-1000000)
+uppor = max(End)
+finesh = which(Start >=lowor & End <=uppor)
+
+last_dist <- qplot(x = Intergenes[finesh], y = Distance[finesh], color = MDirection[finesh], xlab = "Intergenes", ylab = "Distance", geom = "point", main = "Intergenic Lengths for Last Megabase")
+
+last_dist + theme(legend.position = "right") + scale_color_viridis_c(name="Direction", breaks = c(1.0:3.0), labels = c("convergent", "Divergent", "Tandem")) + scale_size(guide = NULL)
+```
+
+Here, we can see intergenic lengths across the chromosome.
+
+```{r, echo=FALSE}
+barplot(Gene ~ Direction, zan,
+        frame.plot=TRUE,
+        col="purple")
+
+Category <-c("Convergent","Divergent","Tandem")
+NullRatio <-c(1, 1, 3)
+ATable <- rbind(Category,NullRatio)
+panderOptions('table.continues','')
+pander(ATable, caption="Expected Ratios of Intergenic Regions")
+NullProportion <- NullRatio/sum(NullRatio)
+
+Observed <- c(length(z1), length(z2), length(z3))
+Expected <- sum(Observed)*NullProportion
+Discrepancy <- (Expected-Observed)^2/Expected
+TestStat <- sum(Discrepancy)
+p_value <- 1-pchisq(TestStat,3-1)
+ATable <- rbind(NullProportion,Expected,Observed,Discrepancy)
+pander(ATable,
+       col.names=Category,
+       digits=3,
+       caption="Observed vs. Expected values for Intergenic Regions")
+print("P-value is equal to:")
+  p_value
+```
+
+Here, we propose the ratio of Convergent:Divergent:Tandem regions is 1:1:3, and get the resulting p-value from a $\chi2$ test.
+
+```{r, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE}
+```
